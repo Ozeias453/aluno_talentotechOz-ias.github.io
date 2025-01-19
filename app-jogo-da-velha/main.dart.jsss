@@ -1,0 +1,209 @@
+import 'package:flutter/material.dart';
+import 'dart:math';
+
+void main() {
+  runApp(const TicTacToeApp());
+}
+
+class TicTacToeApp extends StatelessWidget {
+  const TicTacToeApp({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      title: 'Jogo da Velha',
+      debugShowCheckedModeBanner: false,
+      theme: ThemeData(
+        colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
+      ),
+      home: const TicTacToeGame(),
+    );
+  }
+}
+
+class TicTacToeGame extends StatefulWidget {
+  const TicTacToeGame({super.key});
+
+  @override
+  State<TicTacToeGame> createState() => _TicTacToeGameState();
+}
+
+class _TicTacToeGameState extends State<TicTacToeGame> {
+  List<String> _board = List.filled(9, '');
+  String _currentPlayer = 'X';
+  String _winner = '';
+  bool _isGameOver = false;
+  bool _isConfigPhase = true;
+
+  void _resetGame() {
+    setState(() {
+      _board = List.filled(9, '');
+      _currentPlayer = 'X';
+      _winner = '';
+      _isGameOver = false;
+      _isConfigPhase = true;
+    });
+  }
+
+  void _startGame(String startingPlayer) {
+    setState(() {
+      _currentPlayer = startingPlayer;
+      _isConfigPhase = false;
+      if (_currentPlayer == 'O') {
+        _makeAIMove();
+      }
+    });
+  }
+
+  void _makeMove(int index) {
+    if (_board[index] == '' && !_isGameOver) {
+      setState(() {
+        _board[index] = _currentPlayer;
+        if (_checkWinner(_currentPlayer)) {
+          _winner = _currentPlayer;
+          _isGameOver = true;
+        } else if (!_board.contains('')) {
+          _winner = 'Empate';
+          _isGameOver = true;
+        } else {
+          _currentPlayer = _currentPlayer == 'X' ? 'O' : 'X';
+          if (_currentPlayer == 'O') {
+            _makeAIMove();
+          }
+        }
+      });
+    }
+  }
+
+  void _makeAIMove() {
+    Random random = Random();
+    int index;
+    do {
+      index = random.nextInt(9);
+    } while (_board[index] != '');
+    _makeMove(index);
+  }
+
+  bool _checkWinner(String player) {
+    const List<List<int>> winningCombinations = [
+      [0, 1, 2],
+      [3, 4, 5],
+      [6, 7, 8],
+      [0, 3, 6],
+      [1, 4, 7],
+      [2, 5, 8],
+      [0, 4, 8],
+      [2, 4, 6],
+    ];
+    for (var combination in winningCombinations) {
+      if (combination.every((index) => _board[index] == player)) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Jogo da Velha'),
+        centerTitle: true,
+      ),
+      body: _isConfigPhase
+          ? _buildConfigPhase()
+          : _buildGamePhase(),
+    );
+  }
+
+  Widget _buildConfigPhase() {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          const Text(
+            'Quem começa o jogo?',
+            style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+          ),
+          const SizedBox(height: 20),
+          ElevatedButton(
+            onPressed: () => _startGame('X'),
+            child: const Text('Jogador'),
+          ),
+          const SizedBox(height: 10),
+          ElevatedButton(
+            onPressed: () => _startGame('O'),
+            child: const Text('Máquina'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildGamePhase() {
+    return Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        Text(
+          _isGameOver
+              ? _winner == 'Empate'
+                  ? 'Empate!'
+                  : 'Vencedor: $_winner'
+              : 'Vez do jogador: $_currentPlayer',
+          style: const TextStyle(
+            fontSize: 24,
+            color: Colors.blue,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        const SizedBox(height: 20),
+        Expanded(
+          child: GridView.builder(
+            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: 3,
+              crossAxisSpacing: 5,
+              mainAxisSpacing: 5,
+            ),
+            itemCount: 9,
+            itemBuilder: (context, index) {
+              return GestureDetector(
+                onTap: () => _makeMove(index),
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: Colors.blue[100],
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: Colors.blue, width: 2),
+                  ),
+                  child: Center(
+                    child: Text(
+                      _board[index],
+                      style: TextStyle(
+                        fontSize: 36,
+                        fontWeight: FontWeight.bold,
+                        color: _board[index] == 'X'
+                            ? Colors.blue
+                            : Colors.red,
+                      ),
+                    ),
+                  ),
+                ),
+              );
+            },
+          ),
+        ),
+        ElevatedButton(
+          onPressed: _resetGame,
+          style: ElevatedButton.styleFrom(
+            padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 15),
+            backgroundColor: Colors.blue,
+          ),
+          child: const Text(
+            'Reiniciar Jogo',
+            style: TextStyle(fontSize: 18, color: Colors.white),
+          ),
+        ),
+        const SizedBox(height: 20),
+      ],
+    );
+  }
+}
